@@ -19,9 +19,9 @@ public class BCH {
     public static int[][] d = {d7, d8, d9, d10};
     
     //To validate the input message code given by the user
-    public static boolean isInputValid(String inputCode) {
+    public static boolean isInputValid(String inputCode, int digits) {
         //checking if value is 6 digits
-        if(inputCode.length() != 6) {
+        if(inputCode.length() != digits) {
             return false;
         }
         for (int i = 0; i<inputCode.length(); i++) {
@@ -31,9 +31,7 @@ public class BCH {
                 System.out.println(e);
                 return false;
             }
-            
         }
-        
         return true;
     }
 
@@ -51,15 +49,40 @@ public class BCH {
         }
         return encodedMessage;
     }
+    
+    //identifying errors using syndrom
+    public static double[] detectError(String inputCode) {
+        double[] s = new double[4];
+        int x = 0;
+        for (int i = 0; i < 4; i++) {
+            double result = 0;
+            double temp = 0;
+            for (int j = 1; j <= 10; j++) {
+                if (j < 2) {
+                    x = j;
+                }
+                temp = Math.pow(x * j, i)*(inputCode.codePointAt(j-1) - charZero) ;
+                result += temp;
+
+            }
+            s[i] = result%11;
+        }
+        return s;
+    }
 
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
         System.out.println("Please enter a 6 digit integer to encode");
         String code = scan.nextLine();
-        if(!isInputValid(code)){
-            System.out.println("Please make sure that input is correct");
-            System.exit(0);;
-        }
-        System.out.println("Encoded Message: " + generateBCH(code));
+        double[] s = detectError(code);
+        System.out.println("result" + s[0]);
+        System.out.println("result" + s[1]);
+        System.out.println("result" + s[2]);
+        System.out.println("result" + s[3]);
+//        if(!isInputValid(code, 6)){
+//            System.out.println("Please make sure that input is correct");
+//            System.exit(0);
+//        }
+//        System.out.println("Encoded Message: " + generateBCH(code));
     }
 }

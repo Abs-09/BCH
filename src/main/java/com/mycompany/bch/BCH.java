@@ -9,7 +9,6 @@ import java.lang.NumberFormatException;
  */
 public class BCH {
 
-    
     static int charZero = (int) '0';
 
     //defining of generator Matrix
@@ -65,7 +64,7 @@ public class BCH {
     }
 
     //identifying errors using syndrom
-    public static Integer[] detectError(String inputCode) {
+    public static Integer[] detectErrorSyndrome(String inputCode) {
         Integer[] syndrom = new Integer[4];
 
         for (int i = 0; i < H.length; i++) {
@@ -82,36 +81,71 @@ public class BCH {
     //Calculate PQR from syndromes
     public static Integer[] calculatePQR(Integer[] syndrom) {
         Integer[] PQR = new Integer[4];
-        PQR[0] = (int) Math.pow(syndrom[1], 2) - (syndrom[0] * syndrom[2]); //P
-        PQR[1] = (syndrom[0] * syndrom[3]) * (syndrom[1] * syndrom[2]); //Q
-        PQR[2] = (int) Math.pow(syndrom[2], 2) - (syndrom[1] * syndrom[3]); //R
+        PQR[0] = (int) (Math.pow(syndrom[1], 2) - (syndrom[0] * syndrom[2])) % 11; //P
+        PQR[1] = ((syndrom[0] * syndrom[3]) - (syndrom[1] * syndrom[2])) % 11; //Q
+        PQR[2] = (int) (Math.pow(syndrom[2], 2) - (syndrom[1] * syndrom[3])) % 11; //R
         return PQR;
     }
     
+    //Correcting single 1-bit error
+    public static StringBuilder correctSingleBitError(String encodedMessage, int position, int magnitude){
+        StringBuilder encoded_message = new StringBuilder(encodedMessage);
+        
+        int incorrectBit = (encoded_message.codePointAt(position-1) - charZero);
+        int correctedBit = (incorrectBit - magnitude);
+        char correctedBitInChar = (char) (correctedBit + '0');
+        encoded_message.setCharAt(position-1, correctedBitInChar);
+        return encoded_message;
+    }
+
     public static void main(String[] args) {
         Scanner scan = new Scanner(System.in);
-        System.out.println("Please enter a 6 digit integer to encode");
-        String word = scan.nextLine();
+        
+        //Prompting to enter a message to encode
+        System.out.println("BCH ENCODING ===========================");
+        System.out.print("Please enter a 6 digit message to encode: ");
+        String message = scan.nextLine();
         //validation of 6 inputs
-        if(!isInputValid(word, 6)){
+        if (!isInputValid(message, 6)) {
             System.out.println("Please make sure that input is correct");
             System.exit(0);
         }
         //generating BCH with parity
-        String code = generateBCH(word);
+        String code = generateBCH(message);
         System.out.println("Encoded Message:" + code);
-        //detecting error and generating syndrom
-        Integer[] s = detectError(code);
+
+        //prompting to enter encoded message
+        System.out.println("\nERROR DETECTION ===========================");
+        System.out.print("Please enter the encoded message: ");
+        String encoded_message = scan.nextLine();
+        
+        //Calculcating Syndrom
+        Integer[] s = detectErrorSyndrome(encoded_message);
         System.out.println("\n Syndrom \n====================");
         System.out.println("S1: " + s[0]);
         System.out.println("S2: " + s[1]);
         System.out.println("S3: " + s[2]);
         System.out.println("S4: " + s[3]);
+        
+        //Checking if encoded message has no errors
+        if(s[0] == 0 && s[1] == 0 && s[2] == 0 && s[3] == 0 ) {
+            System.out.println("The encoded message has no errors");
+            System.exit(0);
+        }
+        
         //Calculating PQR values
         Integer[] PQR = calculatePQR(s);
         System.out.println("\n PQR \n====================");
         System.out.println("P " + PQR[0]);
         System.out.println("Q " + PQR[1]);
         System.out.println("R " + PQR[2]);
+        
+        if(PQR[0] == 0 && PQR[1] == 0 && PQR[2] ==0 & s[0] == 1) {        
+            System.out.println("\n Result \n====================");
+            System.out.println("There is a single 1-bit error at position "+ s[1]/s[0]);
+            System.out.println("Recieved encoded Message: " +  encoded_message);
+            System.out.println("Corrected encoded message: " + correctSingleBitError(encoded_message, s[1]/s[0], s[0]));
+        }
+
     }
 }
